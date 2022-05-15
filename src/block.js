@@ -12,6 +12,17 @@
 const SHA256 = require('crypto-js/sha256');
 const hex2ascii = require('hex2ascii');
 
+function _calculateHash({ height, body, time, previousBlockHash }) {
+    return SHA256(
+        JSON.stringify({
+            height,
+            body,
+            time,
+            previousBlockHash
+        })
+    ).toString();
+}
+
 class Block {
 
     // Constructor - argument data will be the object containing the transaction data
@@ -19,7 +30,7 @@ class Block {
 		this.hash = null;                                           // Hash of the block
 		this.height = 0;                                            // Block Height (consecutive number of each block)
 		this.body = Buffer.from(JSON.stringify(data)).toString('hex');   // Will contain the transactions stored in the block, by default it will encode the data
-		this.time = 0;                                              // Timestamp for the Block creation
+		this.time = new Date().getTime().toString().slice(0,-3);    // Timestamp for the Block creation
 		this.previousBlockHash = null;                              // Reference to the previous Block Hash
     }
     
@@ -39,12 +50,18 @@ class Block {
         let self = this;
         return new Promise((resolve, reject) => {
             // Save in auxiliary variable the current block hash
-                                            
             // Recalculate the hash of the Block
             // Comparing if the hashes changed
             // Returning the Block is not valid
-            
             // Returning the Block is valid
+
+            try {
+                const validHash = _calculateHash({...self})
+                const isBlockValid = self.hash === validHash
+                resolve(isBlockValid)
+            } catch (e) {
+                reject(e)
+            }
 
         });
     }
@@ -62,11 +79,26 @@ class Block {
         // Getting the encoded data saved in the Block
         // Decoding the data to retrieve the JSON representation of the object
         // Parse the data to an object to be retrieve.
+        let self = this;
+        const decodeBlock = JSON.parse(hex2ascii(self.body))
+        return decodeBlock;
+        // TODO: Resolve with the data if the object isn't the Genesis block
+        // Check genesis block
+        try {
 
-        // Resolve with the data if the object isn't the Genesis block
-
+        } catch (e) {
+            reject(e)
+        }
     }
 
+    get isGenesis() {
+        return this.height === 0;
+    }
+
+    recalculateHash() {
+        let self = this
+        this.hash = _calculateHash({...self});
+    }
 }
 
 module.exports.Block = Block;                    // Exposing the Block class as a module
