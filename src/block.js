@@ -79,13 +79,12 @@ class Block {
         // Getting the encoded data saved in the Block
         // Decoding the data to retrieve the JSON representation of the object
         // Parse the data to an object to be retrieve.
-        let self = this;
-        const decodeBlock = JSON.parse(hex2ascii(self.body))
-        return decodeBlock;
-        // TODO: Resolve with the data if the object isn't the Genesis block
+        // Resolve with the data if the object isn't the Genesis block
         // Check genesis block
+        let self = this;
         try {
-
+            const data = !this.isGenesis ? JSON.parse(hex2ascii(self.body)) : null;
+            resolve(data)
         } catch (e) {
             reject(e)
         }
