@@ -66,16 +66,17 @@ class Blockchain {
         let self = this;
         return new Promise(async (resolve, reject) => {
            try {
-                // Define height plus one
-                block.height = this.height + 1
-                // Define current time
-                block.time = new Date().getTime().toString().slice(0,-3);
+                // Define height 
+                block.height = this.chain.length
                 // Define previousBlockHash if it is not genesis block
                 if (block.height !== 0) {
-                    block.previousBlockHash = this.chain[block.height-1].hash
+                    block.previousBlockHash = this.chain[block.height-1]?.hash
                 }
+                // Define current time
+                block.time = new Date().getTime().toString().slice(0,-3);
                 // Create block hash
                 block.recalculateHash()
+                console.log(44444,'block',block)
                 // Validate chain
                 const chainValid = await self.validateChain()
                 if (chainValid) {
@@ -124,7 +125,23 @@ class Blockchain {
     submitStar(address, message, signature, star) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            
+
+            // Check request time within 5 mins
+            let messageTime = parseInt(message.split(':')[1])
+            let currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
+            const isTimeExpire = ((currentTime-messageTime) >= (5*60*60))
+            if (isTimeExpire) { reject(new Error('Stale request.')) }
+
+            // Verify message
+            const isVerify = bitcoinMessage.verify(message, address, signature, null, true)
+            if (!isVerify) { reject(new Error('Invalid message.')) }
+
+            // Create a block and add to the chain
+            let block = new BlockClass.Block({ owner: address, star})
+            block.owner = Buffer.from(address).toString('hex')
+            const result = self._addBlock(block)
+            resolve(result)
+
         });
     }
 
