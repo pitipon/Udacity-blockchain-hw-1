@@ -76,7 +76,6 @@ class Blockchain {
                 block.time = new Date().getTime().toString().slice(0,-3);
                 // Create block hash
                 block.recalculateHash()
-                console.log(44444,'block',block)
                 // Validate chain
                 const chainValid = await self.validateChain()
                 if (chainValid) {
@@ -193,7 +192,15 @@ class Blockchain {
         let self = this;
         let stars = [];
         return new Promise((resolve, reject) => {
-            
+            // Filter all blocks by address
+            let allBlocksByAddress = self.chain.filter(block => block.owner === Buffer.from(address).toString('hex'));
+            console.log(33333,allBlocksByAddress)
+            // Decode all blocks and map to result
+            stars = allBlocksByAddress.reduce((prevValue, currentValue)=> {          
+                const decodeBlockData = currentValue.getBData();
+                return [...prevValue, decodeBlockData]
+            },[])
+            resolve(stars)
         });
     }
 

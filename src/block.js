@@ -82,12 +82,8 @@ class Block {
         // Resolve with the data if the object isn't the Genesis block
         // Check genesis block
         let self = this;
-        try {
-            const data = !this.isGenesis ? JSON.parse(hex2ascii(self.body)) : null;
-            resolve(data)
-        } catch (e) {
-            reject(e)
-        }
+        const data = !this.isGenesis ? JSON.parse(hex2ascii(self.body)) : null;
+        return data    
     }
 
     get isGenesis() {
