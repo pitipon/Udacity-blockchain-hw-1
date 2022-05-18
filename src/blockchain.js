@@ -35,7 +35,7 @@ class Blockchain {
      */
     async initializeChain() {
         if( this.height === -1){
-            let block = new BlockClass.Block({data: 'Genesis Block'});
+            const block = new BlockClass.Block({data: 'Genesis Block'});
             await this._addBlock(block);
         }
     }
@@ -65,7 +65,28 @@ class Blockchain {
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-           
+           try {
+                // Define height plus one
+                block.height = this.height + 1
+                // Define current time
+                block.time = new Date().getTime().toString().slice(0,-3);
+                // Define previousBlockHash if it is not genesis block
+                if (block.height !== 0) {
+                    block.previousBlockHash = this.chain[block.height-1].hash
+                }
+                // Create block hash
+                block.recalculateHash()
+                // Validate chain
+                const chainValid = await self.validateChain()
+                if (chainValid) {
+                    self.chain.push(block)
+                    self.height = self.chain.length
+                    resolve(block)
+                }
+
+           } catch (e) {
+               reject(e)
+           }
         });
     }
 
@@ -79,7 +100,7 @@ class Blockchain {
      */
     requestMessageOwnershipVerification(address) {
         return new Promise((resolve) => {
-            
+            resolve( `${address}:${new Date().getTime().toString().slice(0,-3)}:starRegistry`)
         });
     }
 
@@ -116,7 +137,11 @@ class Blockchain {
     getBlockByHash(hash) {
         let self = this;
         return new Promise((resolve, reject) => {
-           
+           try {
+                resolve(self.chain.find(block => block.hash === hash))
+           } catch (e) {
+               reject(e)
+           }
         });
     }
 
@@ -128,11 +153,15 @@ class Blockchain {
     getBlockByHeight(height) {
         let self = this;
         return new Promise((resolve, reject) => {
-            let block = self.chain.filter(p => p.height === height)[0];
-            if(block){
-                resolve(block);
-            } else {
-                resolve(null);
+            try {
+                const block = self.chain.find( b => b.height === height)
+                if (block) {
+                    resolve(block)
+                } else {
+                    reject('Not found block')
+                }
+            } catch (e) {
+                reject(e)
             }
         });
     }
@@ -161,7 +190,28 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
+            // Validate all blocks in chain
+            for (let i=0; i<self.chain.length ; i++) {
+                const block = self.chain[i]
+                const isBlockValid = await block.validate()
+                if (isBlockValid) {
+                    if (block.height > 0) {
+                        const prevBlock = self.chain[block.height-1]
+                        if (prevBlock.hash !== block.previousBlockHash) {
+                            errorLog.push(new Error(`Error : Block #${block.height} - hash mismatch.`));
+                        }
+                    }
+                } else {
+                    errorLog.push(new Error(`Error #${block.height}: ${block.hash}`))
+                }
+            }
             
+            // Reject error
+            if (errorLog.length == 0) {
+                resolve(true)
+            } else {
+                reject(errorLog)
+            }
         });
     }
 
