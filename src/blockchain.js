@@ -128,7 +128,7 @@ class Blockchain {
             // Check request time within 5 mins
             let messageTime = parseInt(message.split(':')[1])
             let currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
-            const isTimeExpire = ((currentTime-messageTime) >= (5*60*60))
+            const isTimeExpire = ((currentTime-messageTime) >= (5*60))
             if (isTimeExpire) { reject(new Error('Stale request.')) }
 
             // Verify message
@@ -230,11 +230,10 @@ class Blockchain {
                 }
             }
             
-            // Reject error
             if (errorLog.length == 0) {
-                resolve(true)
+                resolve([])
             } else {
-                reject(errorLog)
+                resolve(errorLog)
             }
         });
     }
